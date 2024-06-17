@@ -136,11 +136,13 @@ public class Tunnel extends java.applet.Applet {
    int pboflag,xt,yt,ntikx,ntiky,npt,xtp,ytp ;
    int xt1,yt1,xt2,yt2,spanfac ;
    int lines,nord,nabs,ntr ;
+   static int globalActuator;
    static double begx,endx,begy,endy ;
    static String labx,labxu,laby,labyu ;
    static double pltx[][]  = new double[3][40] ;
    static double plty[][]  = new double[3][40] ;
    static double plthg[]  = new double[2] ;
+   static Actuator actuators[] = new Actuator[4];
 
    Solver solve ;
    Viewer view ;
@@ -164,7 +166,7 @@ public class Tunnel extends java.applet.Applet {
    static DataOutputStream datout ;
 
    public void init() {
-     int i;
+     int i, a;
      solve = new Solver() ;
 
      offImg1 = createImage(this.size().width,
@@ -177,7 +179,11 @@ public class Tunnel extends java.applet.Applet {
                       this.size().height) ;
      off3Gg = offImg3.getGraphics() ;
 
-     setLayout(new GridLayout(2,2,5,5)) ;
+     setLayout(new GridLayout(2,2,5,5));
+
+     for (a=0; a<4; a++) {
+         actuators[a] = new Actuator();
+     }
 
      solve.setDefaults () ;
 
@@ -198,6 +204,27 @@ public class Tunnel extends java.applet.Applet {
      view.start() ;
      out.plt.start() ;
   }
+
+  public class Actuator {
+   int id;
+
+   public Actuator() {
+      id = globalActuator;
+      globalActuator++; // increment the global actuator id 
+   }
+
+   public int setOn(double[] args) {
+      // Turn the actuator on based on flow conditions
+      // The actuator is timer based and can be set on intermittenly
+      // The actuator can work at capacities below 100%. 
+      return 0;
+   }
+
+   public int setOff() {
+      // This functions handles turning the actuator off
+      return 0;
+   }
+  }
  
   public Insets insets() {
      return new Insets(5,5,5,5) ;
@@ -215,7 +242,7 @@ public class Tunnel extends java.applet.Applet {
  
      loadOut() ;
 
-     out.plt.loadPlot() ;
+     out.plt.loadPlot();
   }
 
   public int filter0(double inumbr) {
@@ -728,7 +755,7 @@ public class Tunnel extends java.applet.Applet {
 
      public void genFlow() {   // generate flowfield
        double rnew,thet,psv,fxg;
-       int k,index;
+       int k,index,a;
                               /* all lines of flow  except stagnation line*/
        for (k=1; k<=nlnc; ++k) {
          psv = -.5*(nln2-1) + .5*(k-1) ;
@@ -793,6 +820,11 @@ public class Tunnel extends java.applet.Applet {
            ym[k][npt2+index]  = lymt ;
            xgc[k][index]  = lxgtc ;
            ygc[k][index]  = lygtc ;
+
+           for (a = 0; a < 4; a++) {
+            double[] args = {lxgt, lygt, lrgt, lthgt, lxmt, lymt, lxgtc, lygtc};
+            actuators[a].setOn(args);
+           }
        }
                                               /*  stagnation point */
        xg[k][npt2]  = xcval ;
@@ -810,9 +842,9 @@ public class Tunnel extends java.applet.Applet {
        clift = gamval*4.0*3.1415926/chrd ;
 
        return ;
-     }
+      }
 
-     public void getPoints(double fxg, double psv) {   // flow in x-psi
+    public void getPoints(double fxg, double psv) {   // flow in x-psi
        double radm,thetm ;                /* MODS  20 Jul 99  whole routine*/
        double fnew,ynew,yold,rfac,deriv ;
        double xold,xnew,thet ;
